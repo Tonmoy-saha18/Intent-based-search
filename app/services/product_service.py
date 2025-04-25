@@ -72,7 +72,7 @@ async def get_product_by_list_of_ids(object_ids):
 async def store_embeddings(result, product_dicts):
     for inserted_id, product in zip(result.inserted_ids, product_dicts):
         # Now you can store embeddings in Qdrant
-        embedding = generate_product_embedding(product["name"], product.get("description", ""))
+        embedding = generate_product_embedding(product)
         dic = {"id": str(product["_id"])}
         store_product_vector(str(uuid.uuid5(uuid.NAMESPACE_DNS, str(inserted_id))), embedding, dic)
 
