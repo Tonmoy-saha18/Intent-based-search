@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+elasticsearch
+sentence-transformers
+qdrant-client
+langchain-community

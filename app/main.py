@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from app.schemas import ProductCreate, ProductOut
-from elastic import index_product_es, get_product_es, create_index
+from app.elastic import index_product_es, get_product_es, create_index
 from app.vector_store import index_product_vector
 
 app = FastAPI()
@@ -23,9 +23,7 @@ def create_product(product: ProductCreate):
     index_product_es(product_id, data)
 
     # Index in FAISS
-    index_product_vector(product_id, product.description)
-    index_product_vector(product_id, product.name)
-    index_product_vector(product_id, product.category)
+    index_product_vector(product_id, product.name, product.description, product.price, product.category)
 
     return ProductOut(id=product_id, **product.dict())
 

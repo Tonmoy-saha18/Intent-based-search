@@ -1,19 +1,47 @@
-import faiss
-import numpy as np
-import os
+from __future__ import annotations
+
+from typing import Optional
+
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import PointStruct, VectorParams, Distance, CollectionStatus
 from sentence_transformers import SentenceTransformer
-from app.config import VECTOR_DB_PATH
+
+QDRANT_HOST = "localhost"  # or "qdrant" if inside Docker network
+QDRANT_PORT = 6333
+COLLECTION_NAME = "product_vectors"
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
+DIM = 384  # embedding size of MiniLM
 
-if os.path.exists(VECTOR_DB_PATH):
-    index = faiss.read_index(VECTOR_DB_PATH)
-    id_map = faiss.read_index("id_map.index")
-else:
-    index = faiss.IndexFlatL2(384)
-    id_map = faiss.IndexIDMap(index)
+# Initialize client
+client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
-def index_product_vector(product_id: int, description: str):
-    embedding = model.encode([description])
-    id_map.add_with_ids(np.array(embedding).astype('float32'), np.array([product_id]))
-    faiss.write_index(id_map, "id_map.index")
+# Create collection if it doesn't exist
+collections = client.get_collections().collections
+collection_names = [c.name for c in collections]
+
+if COLLECTION_NAME not in collection_names:
+    client.recreate_collection(
+        collection_name=COLLECTION_NAME,
+        vectors_config=VectorParams(size=DIM, distance=Distance.COSINE)
+    )
+
+
+def index_product_vector(product_id: int, name: str, description: str, price: float, category: Optional[str] = None):
+    embedding = model.encode(description).tolist()
+
+    payload = {
+        "name": name,
+        "description": description,
+        "price": price,
+        "category": category,
+    }
+
+    point = PointStruct(
+        id=product_id,
+        vector=embedding,
+        payload=payload
+    )
+
+    client.upsert(collection_name=COLLECTION_NAME, points=[point])
+
