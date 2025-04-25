@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
 
-from app.services.product_service import insert_bulk_product, insert_one_product, get_all_product
+from app.services.product_service import insert_bulk_product, insert_one_product, get_all_product, find_product
 from app.schemas.product import ProductIn, ProductOut
 
 router = APIRouter()
@@ -23,3 +23,10 @@ async def import_products_csv(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="File must be a CSV")
     result = await insert_bulk_product(file)
     return {"message": f"{len(result.inserted_ids)} products imported successfully"}
+
+
+@router.post("/search/")
+async def search(query: str, rank: int):
+    results = await find_product(query, rank)
+    # Return the top results
+    return {"results": results}
