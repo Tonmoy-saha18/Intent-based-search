@@ -2,11 +2,10 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
 
-from app.core.product_service import insert_bulk_product, insert_one_product, get_all_product
+from app.services.product_service import insert_bulk_product, insert_one_product, get_all_product
 from app.schemas.product import ProductIn, ProductOut
 
 router = APIRouter()
-
 
 @router.post("/import")
 async def import_product(product: ProductIn):

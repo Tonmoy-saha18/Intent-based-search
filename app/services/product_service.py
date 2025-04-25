@@ -1,10 +1,14 @@
 import csv
 import io
+import uuid
+from typing import List
 
 from fastapi import HTTPException, File
 
 from app.db.mongo import get_product_collection
+from app.db.qrdant import store_product_vector
 from app.schemas.product import ProductIn
+from app.services.embedding import generate_product_embedding
 
 
 async def insert_bulk_product(file: File(...)):
@@ -30,6 +34,7 @@ async def insert_bulk_product(file: File(...)):
 
     collection = get_product_collection()
     result = await collection.insert_many(products)
+    await store_embeddings(result, products)
     return result
 
 
@@ -50,3 +55,10 @@ async def get_all_product():
         del product["_id"]
         products.append(product)
     return products
+
+
+async def store_embeddings(result, product_dicts):
+    for inserted_id, product in zip(result.inserted_ids, product_dicts):
+        # Now you can store embeddings in Qdrant
+        embedding = generate_product_embedding(product["name"], product.get("description", ""))
+        store_product_vector(str(uuid.uuid5(uuid.NAMESPACE_DNS, str(inserted_id))), embedding)
