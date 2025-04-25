@@ -6,7 +6,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct, VectorParams, Distance, CollectionStatus
 from sentence_transformers import SentenceTransformer
 
-QDRANT_HOST = "localhost"  # or "qdrant" if inside Docker network
+QDRANT_HOST = "qdrant"  # or "qdrant" if inside Docker network
 QDRANT_PORT = 6333
 COLLECTION_NAME = "product_vectors"
 

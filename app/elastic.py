@@ -1,7 +1,6 @@
-import time
-
 from elasticsearch import Elasticsearch
 from app.config import ELASTICSEARCH_URL
+import logging
 
 es = Elasticsearch(
                     ELASTICSEARCH_URL,
@@ -10,20 +9,10 @@ es = Elasticsearch(
                 )
 
 INDEX_NAME = "product"
-
-
-def wait_for_es(timeout=200):
-    for _ in range(timeout):
-        if es.ping():
-            print("Elasticsearch is ready.")
-            return True
-        print("Waiting for Elasticsearch...")
-        time.sleep(1)
-    raise ConnectionError("Elasticsearch is not reachable.")
+logger = logging.getLogger("Logger")
 
 
 def create_index():
-    wait_for_es()
     print(es.ping())
     if not es.indices.exists(index=INDEX_NAME):
         print("Creating index: ", INDEX_NAME)
