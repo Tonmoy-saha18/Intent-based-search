@@ -1,20 +1,25 @@
-FROM python:3.10-slim
+FROM python:3.9-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy only requirements first to leverage Docker cache
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc python3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies separately so they're cached unless requirements.txt changes
-RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir -r requirements.txt
-
-# Now copy the rest of the code
+# Copy application code
 COPY . .
 
-# Expose FastAPI port
+# Environment variables
+ENV PYTHONPATH=/app
+ENV PORT=8000
+
+# Expose port
 EXPOSE 8000
 
-# Run the app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "api.gateway.main:app"]

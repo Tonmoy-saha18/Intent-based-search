@@ -1,51 +1,40 @@
 version: '3.8'
 
 services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.5
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - network.host=0.0.0.0
-    ports:
-      - "9200:9200"
-    volumes:
-      - esdata:/usr/share/elasticsearch/data
-    networks:
-      - esnet
-
-  qdrant:
-    image: qdrant/qdrant
-    container_name: qdrant
-    ports:
-      - "6333:6333"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    networks:
-      - esnet
-
-  fastapi_app:
+  api:
     build: .
-    container_name: intent-search
     ports:
       - "8000:8000"
     environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - VECTOR_DB_PATH=vector.index
-      - QDRANT_HOST=http://qdrant:6333
+      - MONGO_URI=mongodb://mongo:27017
+      - REDIS_HOST=redis
     depends_on:
-      - elasticsearch
-      - qdrant
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:5.0
+    ports:
+      - "27017:27017"
     volumes:
-      - .:/app
-    networks:
-      - esnet
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:6.2
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  indexer:
+    build: .
+    command: python -m pipelines.indexing.service
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+    depends_on:
+      - mongo
+      - api
 
 volumes:
-  esdata:
-  qdrant_data:
-
-networks:
-  esnet:
-    driver: bridge
+  mongo_data:
+  redis_data:
