@@ -1,20 +1,15 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.5
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - network.host=0.0.0.0
+  mongodb:
+    image: mongo:latest
+    container_name: mongo_container
     ports:
-      - "9200:9200"
+      - "27017:27017"
     volumes:
-      - esdata:/usr/share/elasticsearch/data
-    networks:
-      - esnet
-
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: productdb
   qdrant:
     image: qdrant/qdrant
     container_name: qdrant
@@ -22,30 +17,7 @@ services:
       - "6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
-    networks:
-      - esnet
-
-  fastapi_app:
-    build: .
-    container_name: intent-search
-    ports:
-      - "8000:8000"
-    environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - VECTOR_DB_PATH=vector.index
-      - QDRANT_HOST=http://qdrant:6333
-    depends_on:
-      - elasticsearch
-      - qdrant
-    volumes:
-      - .:/app
-    networks:
-      - esnet
 
 volumes:
-  esdata:
+  mongo_data:
   qdrant_data:
-
-networks:
-  esnet:
-    driver: bridge
