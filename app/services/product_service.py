@@ -8,12 +8,12 @@ from fastapi import HTTPException, File
 
 from app.db.mongo import get_product_collection
 from app.db.qrdant import store_product_vector, search_in_vector
-from app.model.intent_extractor import get_query_intent
 from app.schemas.product import ProductIn
 from app.services.embedding import generate_product_embedding, generate_embedding
 
 from app.core.monitoring import tracer, api_request_counter, api_latency_histogram, embedding_latency_histogram
 import time
+from app.model.intent_extractor import get_query_intent
 
 
 async def insert_bulk_product(file: File(...)):
@@ -25,12 +25,13 @@ async def insert_bulk_product(file: File(...)):
     for row in reader:
         try:
             product = ProductIn(
-                name=row["title_left"],
-                description=row.get("description_left"),
-                category=row["category_left"],
-                brand=row.get("brand_left"),
-                price=float(row["price_left"]),
-                lan=row["language_left"]
+                name=row["name"],
+                description=row.get("description"),
+                category=row["category"],
+                brand=row.get("brand"),
+                price=float(row["price"]),
+                stock=int(row["stock"]),
+                tags=row.get("tags", "").split(";") if row.get("tags") else []
             )
             products.append(product.dict())
         except Exception as e:
@@ -72,21 +73,21 @@ async def get_product_by_list_of_ids(object_ids):
     return products
 
 
-# async def store_embeddings(result, product_dicts):
-#     for inserted_id, product in zip(result.inserted_ids, product_dicts):
-#         # Now you can store embeddings in Qdrant
-#         embedding = generate_product_embedding(product)
-#         dic = {"id": str(product["_id"])}
-#         store_product_vector(str(uuid.uuid5(uuid.NAMESPACE_DNS, str(inserted_id))), embedding, dic)
+async def store_embeddings(result, product_dicts):
+    for inserted_id, product in zip(result.inserted_ids, product_dicts):
+        # Now you can store embeddings in Qdrant
+        embedding = generate_product_embedding(product)
+        dic = {"id": str(product["_id"])}
+        store_product_vector(str(uuid.uuid5(uuid.NAMESPACE_DNS, str(inserted_id))), embedding, dic)
 
 
-# async def find_product(query: str, ranks):
-#     # Convert query into embedding
-#     query_embedding = generate_embedding(query)
-#     result = search_in_vector(query_embedding, ranks)
-#     object_id_list = [ObjectId(a.dict().get("payload")["id"]) for a in result]
-#     products = await get_product_by_list_of_ids(object_id_list)
-#     return products
+async def find_product(query: str, ranks):
+    # Convert query into embedding
+    query_embedding = generate_embedding(query)
+    result = search_in_vector(query_embedding, ranks)
+    object_id_list = [ObjectId(a.dict().get("payload")["id"]) for a in result]
+    products = await get_product_by_list_of_ids(object_id_list)
+    return products
 
 async def find_product(query: str, ranks):
     start_time = time.time()
@@ -98,7 +99,7 @@ async def find_product(query: str, ranks):
         # Track embedding generation
         with tracer.start_as_current_span("generate_embedding"):
             embedding_start = time.time()
-            query_embedding = generate_embedding(str(intent_query))
+            query_embedding = generate_embedding(query)
             embedding_latency_histogram.record(time.time() - embedding_start, {"operation": "query_embedding"})
         
         # Track vector search

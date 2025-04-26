@@ -53,7 +53,7 @@ async def import_products_csv(request: Request, file: UploadFile = File(...)):
 
 @router.post("/search/")
 @limiter.limit("5/minute")
-async def search(request: Request, query: str, rank: int):
+async def search(request: Request, query: str, rank=10):
     start_time = time.time()
     
     with tracer.start_as_current_span("search_endpoint"):
