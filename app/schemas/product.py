@@ -20,10 +20,7 @@ class ProductIn(BaseModel):
     category: str = Field(..., example="Footwear")
     brand: Optional[str] = Field(None, example="Nike")
     price: float = Field(..., example=149.99)
-    stock: int = Field(..., example=30)
-    tags: Optional[List[str]] = Field(default_factory=list)
-    images: Optional[List[ProductImage]] = Field(default_factory=list)
-    variants: Optional[List[ProductVariant]] = Field(default_factory=list)
+    lan: str
 
 
 class ProductOut(ProductIn):

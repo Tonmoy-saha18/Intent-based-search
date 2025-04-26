@@ -21,13 +21,12 @@ async def insert_bulk_product(file: File(...)):
     for row in reader:
         try:
             product = ProductIn(
-                name=row["name"],
-                description=row.get("description"),
-                category=row["category"],
-                brand=row.get("brand"),
-                price=float(row["price"]),
-                stock=int(row["stock"]),
-                tags=row.get("tags", "").split(";") if row.get("tags") else []
+                name=row["title_left"],
+                description=row.get("description_left"),
+                category=row["category_left"],
+                brand=row.get("brand_left"),
+                price=float(row["price_left"]),
+                lan=row["language_left"]
             )
             products.append(product.dict())
         except Exception as e:
