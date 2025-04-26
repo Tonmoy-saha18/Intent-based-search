@@ -8,6 +8,7 @@ from fastapi import HTTPException, File
 
 from app.db.mongo import get_product_collection
 from app.db.qrdant import store_product_vector, search_in_vector
+from app.model.intent_extractor import get_query_intent
 from app.schemas.product import ProductIn
 from app.services.embedding import generate_product_embedding, generate_embedding
 
@@ -89,12 +90,15 @@ async def get_product_by_list_of_ids(object_ids):
 
 async def find_product(query: str, ranks):
     start_time = time.time()
+    intent_query = get_query_intent(query)
+    print(intent_query)
+
     
     with tracer.start_as_current_span("find_product"):
         # Track embedding generation
         with tracer.start_as_current_span("generate_embedding"):
             embedding_start = time.time()
-            query_embedding = generate_embedding(query)
+            query_embedding = generate_embedding(str(intent_query))
             embedding_latency_histogram.record(time.time() - embedding_start, {"operation": "query_embedding"})
         
         # Track vector search
